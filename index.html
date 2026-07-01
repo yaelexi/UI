@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rice Hopper Field Monitor</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  :root{
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --bg-page: #f5f5f5;
+    --surface-1: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b6b6b;
+    --text-muted: #9a9a9a;
+    --border: #e5e5e5;
+    --radius: 8px;
+
+    --bg-success: #e6f4ea;
+    --text-success: #1e8e3e;
+
+    --bg-accent: #e8f0fe;
+    --text-accent: #1a73e8;
+
+    --bg-warning: #fef7e0;
+    --text-warning: #b06000;
+
+    --bg-danger: #fce8e6;
+    --text-danger: #c5221f;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:var(--bg-page);
+    font-family:var(--font-sans);
+    padding:24px 16px;
+  }
+
+  button{
+    font-family:var(--font-sans);
+    font-size:14px;
+    font-weight:500;
+    padding:8px 16px;
+    border-radius:var(--radius);
+    border:none;
+    cursor:pointer;
+    background:var(--text-primary);
+    color:#fff;
+    transition:opacity 0.15s ease;
+  }
+  button:hover{ opacity:0.85; }
+</style>
+</head>
+<body>
+
+<div style="max-width:380px;margin:0 auto;font-family:var(--font-sans);">
+  <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Minimalist rice hopper monitoring app home screen with scan toggle that logs a new result to the pest history list below</h2>
+
+  <div style="padding:1.5rem 0 1rem;">
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 4px;">Welcome</p>
+    <h1 style="font-size:22px;font-weight:500;margin:0;color:var(--text-primary);">Keep watch on your field</h1>
+  </div>
+
+  <div id="scan-card" style="background:var(--surface-1);border-radius:12px;padding:1.25rem;display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div id="scan-dot-wrap" style="width:40px;height:40px;border-radius:50%;background:var(--bg-success);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;">
+      <i id="scan-icon" class="ti ti-scan" style="font-size:20px;color:var(--text-success);" aria-hidden="true"></i>
+    </div>
+    <div style="flex:1;">
+      <p id="scan-title" style="font-size:15px;font-weight:500;margin:0 0 2px;color:var(--text-primary);">Not scanning</p>
+      <p id="scan-sub" style="font-size:13px;color:var(--text-secondary);margin:0;">Tap start to scan for rice hopper</p>
+    </div>
+    <button id="scan-btn" onclick="toggleScan()" style="white-space:nowrap;">Start scan</button>
+  </div>
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+    <h3 style="font-size:16px;font-weight:500;margin:0;color:var(--text-primary);">Pest history</h3>
+    <span id="record-count" style="font-size:13px;color:var(--text-muted);">8 records</span>
+  </div>
+
+  <div id="history-list" style="display:flex;flex-direction:column;background:var(--surface-1);border-radius:12px;padding:0 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);"></div>
+</div>
+
+<script>
+var scanning = false;
+var scanTimer = null;
+
+var records = [
+  {date:'May 12, 2025', time:'08:45 AM', status:'Treated', role:'success', area:'Area A', plot:'A-3'},
+  {date:'May 10, 2025', time:'04:15 PM', status:'Treated', role:'success', area:'Area B', plot:'B-1'},
+  {date:'May 8, 2025', time:'10:30 AM', status:'No activity', role:'accent', area:'Area B', plot:'B-2'},
+  {date:'May 5, 2025', time:'03:20 PM', status:'Treated', role:'success', area:'Area A', plot:'A-3'},
+  {date:'May 3, 2025', time:'11:05 AM', status:'Treated', role:'success', area:'Area A', plot:'A-3'},
+  {date:'Apr 30, 2025', time:'09:40 AM', status:'No activity', role:'accent', area:'Area B', plot:'B-1'},
+  {date:'Apr 28, 2025', time:'02:15 PM', status:'Treated', role:'success', area:'Area B', plot:'B-2'},
+  {date:'Apr 25, 2025', time:'10:00 AM', status:'No activity', role:'accent', area:'Area A', plot:'A-3'}
+];
+
+var outcomes = [
+  {status:'Treated', role:'success', detected:true},
+  {status:'Treated', role:'success', detected:true},
+  {status:'Treated', role:'success', detected:true},
+  {status:'No activity', role:'accent', detected:false}
+];
+
+var plots = [
+  {area:'Area A', plot:'A-1'},
+  {area:'Area A', plot:'A-2'},
+  {area:'Area A', plot:'A-3'},
+  {area:'Area B', plot:'B-1'},
+  {area:'Area B', plot:'B-2'}
+];
+
+function toggleScan(){
+  scanning = !scanning;
+  var wrap = document.getElementById('scan-dot-wrap');
+  var icon = document.getElementById('scan-icon');
+  var title = document.getElementById('scan-title');
+  var sub = document.getElementById('scan-sub');
+  var btn = document.getElementById('scan-btn');
+
+  if(scanning){
+    wrap.style.background = 'var(--bg-accent)';
+    icon.className = 'ti ti-player-stop-filled';
+    icon.style.color = 'var(--text-accent)';
+    icon.style.fontSize = '16px';
+    title.textContent = 'Scanning';
+    sub.textContent = 'Move around your plot to detect activity';
+    btn.textContent = 'Stop scan';
+
+    scanTimer = setTimeout(function(){
+      logScanResult();
+    }, 2200);
+  } else {
+    clearTimeout(scanTimer);
+    resetScanCard();
+  }
+}
+
+function resetScanCard(){
+  var wrap = document.getElementById('scan-dot-wrap');
+  var icon = document.getElementById('scan-icon');
+  var title = document.getElementById('scan-title');
+  var sub = document.getElementById('scan-sub');
+  var btn = document.getElementById('scan-btn');
+
+  wrap.style.background = 'var(--bg-success)';
+  icon.className = 'ti ti-scan';
+  icon.style.color = 'var(--text-success)';
+  icon.style.fontSize = '20px';
+  title.textContent = 'Not scanning';
+  sub.textContent = 'Tap start to scan for rice hopper';
+  btn.textContent = 'Start scan';
+}
+
+function logScanResult(){
+  scanning = false;
+
+  var outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+  var spot = plots[Math.floor(Math.random() * plots.length)];
+  var now = new Date();
+  var dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  var newRecord = {date: dateStr, time: timeStr, status: outcome.status, role: outcome.role, area: spot.area, plot: spot.plot, isNew: true};
+  records.unshift(newRecord);
+
+  var wrap = document.getElementById('scan-dot-wrap');
+  var icon = document.getElementById('scan-icon');
+  var title = document.getElementById('scan-title');
+  var sub = document.getElementById('scan-sub');
+  var btn = document.getElementById('scan-btn');
+
+  wrap.style.background = 'var(--bg-' + outcome.role + ')';
+  icon.className = outcome.detected ? 'ti ti-check' : 'ti ti-scan';
+  icon.style.color = 'var(--text-' + outcome.role + ')';
+  icon.style.fontSize = '18px';
+  title.textContent = outcome.detected ? 'Pest treated' : 'Scan complete';
+  sub.textContent = outcome.detected ? 'Pesticide applied at plot ' + spot.plot : 'No activity at plot ' + spot.plot;
+  btn.textContent = 'Start scan';
+
+  renderHistory();
+}
+
+function renderHistory(){
+  var list = document.getElementById('history-list');
+  var count = document.getElementById('record-count');
+  count.textContent = records.length + ' records';
+  list.innerHTML = '';
+
+  records.forEach(function(r, i){
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;' + (i < records.length - 1 ? 'border-bottom:0.5px solid var(--border);' : '') + (r.isNew ? 'background:var(--bg-' + r.role + ');border-radius:var(--radius);padding:12px 10px;margin-bottom:2px;' : '');
+
+    var textCol = document.createElement('div');
+    textCol.style.cssText = 'flex:1;min-width:0;';
+    textCol.innerHTML =
+      '<p style="font-size:14px;font-weight:500;margin:0 0 2px;color:var(--text-primary);">' + r.date + ' &middot; ' + r.time + (r.isNew ? ' <span style="font-size:11px;color:var(--text-' + r.role + ');font-weight:500;">&middot; just now</span>' : '') + '</p>' +
+      '<p style="font-size:13px;color:var(--text-secondary);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.area + ', plot ' + r.plot + '</p>';
+
+    var badge = document.createElement('span');
+    badge.textContent = r.status;
+    badge.style.cssText = 'font-size:12px;font-weight:500;padding:3px 10px;border-radius:var(--radius);white-space:nowrap;flex-shrink:0;background:var(--bg-' + r.role + ');color:var(--text-' + r.role + ');';
+
+    row.appendChild(textCol);
+    row.appendChild(badge);
+    list.appendChild(row);
+  });
+}
+
+renderHistory();
+</script>
+
+</body>
+</html>
