@@ -3,212 +3,301 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rice Hopper Field Monitor</title>
+<title>AIDPAS — Field Monitor</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
   :root{
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --bg-page: #f5f5f5;
-    --surface-1: #ffffff;
-    --text-primary: #1a1a1a;
-    --text-secondary: #6b6b6b;
-    --text-muted: #9a9a9a;
-    --border: #e5e5e5;
     --radius: 8px;
+    --page-bg: #ebe9e2;
+    --surface-1: #f3f1ea;
+    --surface-2: #ffffff;
+    --text-primary: #1f1f1d;
+    --text-secondary: #6b6a64;
+    --text-muted: #9a988f;
+    --border: #e3e1d8;
+    --border-strong: #cfcdc3;
 
     --bg-success: #e6f4ea;
-    --text-success: #1e8e3e;
-
+    --text-success: #1e7a3c;
+    --bg-danger: #fce9e6;
+    --text-danger: #c23a26;
     --bg-accent: #e8f0fe;
-    --text-accent: #1a73e8;
+    --text-accent: #1a66d4;
+  }
 
-    --bg-warning: #fef7e0;
-    --text-warning: #b06000;
+  @media (prefers-color-scheme: dark){
+    :root{
+      --page-bg: #26251f;
+      --surface-1: #302f28;
+      --surface-2: #3a392f;
+      --text-primary: #ecebe2;
+      --text-secondary: #b3b1a6;
+      --text-muted: #86847a;
+      --border: #45443a;
+      --border-strong: #55534700;
 
-    --bg-danger: #fce8e6;
-    --text-danger: #c5221f;
+      --bg-success: #1c3626;
+      --text-success: #7ed69b;
+      --bg-danger: #3d2320;
+      --text-danger: #f0a496;
+      --bg-accent: #1e3252;
+      --text-accent: #8fbcff;
+    }
   }
 
   *{ box-sizing:border-box; }
-
   body{
     margin:0;
-    background:var(--bg-page);
+    background:var(--page-bg);
     font-family:var(--font-sans);
-    padding:24px 16px;
+    padding:24px 12px;
+    -webkit-font-smoothing:antialiased;
   }
-
   button{
     font-family:var(--font-sans);
-    font-size:14px;
+    font-size:13px;
     font-weight:500;
-    padding:8px 16px;
+    padding:6px 14px;
     border-radius:var(--radius);
-    border:none;
+    border:0.5px solid var(--border-strong);
+    background:var(--surface-2);
+    color:var(--text-primary);
     cursor:pointer;
-    background:var(--text-primary);
-    color:#fff;
-    transition:opacity 0.15s ease;
+    transition:opacity 0.15s ease, transform 0.1s ease;
   }
   button:hover{ opacity:0.85; }
+  button:active{ transform:scale(0.97); }
+  button:disabled{ opacity:0.6; cursor:default; }
+
+  .spin{ animation:spin 1s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .chev{ transition:transform 0.18s ease; }
 </style>
 </head>
 <body>
 
-<div style="max-width:380px;margin:0 auto;font-family:var(--font-sans);">
-  <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">Minimalist rice hopper monitoring app home screen with scan toggle that logs a new result to the pest history list below</h2>
+<div style="max-width:380px;margin:0 auto;background:var(--surface-1);border-radius:24px;padding:14px 14px 20px;">
+  <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;">AIDPAS mobile app home screen with launch button, live pest notifications during scanning, and nested pest scan history</h2>
 
-  <div style="padding:1.5rem 0 1rem;">
-    <p style="font-size:13px;color:var(--text-muted);margin:0 0 4px;">Welcome</p>
-    <h1 style="font-size:22px;font-weight:500;margin:0;color:var(--text-primary);">Keep watch on your field</h1>
+  <div style="display:flex;justify-content:center;margin-bottom:10px;">
+    <div style="width:60px;height:5px;border-radius:3px;background:var(--border-strong);"></div>
   </div>
 
-  <div id="scan-card" style="background:var(--surface-1);border-radius:12px;padding:1.25rem;display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-    <div id="scan-dot-wrap" style="width:40px;height:40px;border-radius:50%;background:var(--bg-success);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;">
-      <i id="scan-icon" class="ti ti-scan" style="font-size:20px;color:var(--text-success);" aria-hidden="true"></i>
+  <div style="background:var(--surface-2);border-radius:16px;padding:1.25rem;">
+    <div style="padding:0.5rem 0 1rem;">
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 4px;">AIDPAS</p>
+      <h1 style="font-size:20px;font-weight:500;margin:0;color:var(--text-primary);">Keep watch on your field</h1>
     </div>
-    <div style="flex:1;">
-      <p id="scan-title" style="font-size:15px;font-weight:500;margin:0 0 2px;color:var(--text-primary);">Not scanning</p>
-      <p id="scan-sub" style="font-size:13px;color:var(--text-secondary);margin:0;">Tap start to scan for rice hopper</p>
+
+    <div id="toast-slot" style="overflow:hidden;max-height:0;opacity:0;transition:max-height 0.25s ease,opacity 0.25s ease,margin 0.25s ease;margin-bottom:0;">
+      <div style="background:var(--bg-danger);border-radius:12px;padding:0.75rem 1rem;display:flex;align-items:center;gap:10px;">
+        <i class="ti ti-bell-ringing" style="font-size:18px;color:var(--text-danger);flex-shrink:0;" aria-hidden="true"></i>
+        <div style="flex:1;min-width:0;">
+          <p id="toast-title" style="font-size:13px;font-weight:500;margin:0;color:var(--text-danger);">Pest detected</p>
+          <p id="toast-sub" style="font-size:12px;margin:0;color:var(--text-danger);"></p>
+        </div>
+      </div>
     </div>
-    <button id="scan-btn" onclick="toggleScan()" style="white-space:nowrap;">Start scan</button>
-  </div>
 
-  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
-    <h3 style="font-size:16px;font-weight:500;margin:0;color:var(--text-primary);">Pest history</h3>
-    <span id="record-count" style="font-size:13px;color:var(--text-muted);">8 records</span>
-  </div>
+    <div id="scan-card" style="background:var(--surface-1);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;">
+      <div id="scan-dot-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--bg-success);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i id="scan-icon" class="ti ti-player-play" style="font-size:16px;color:var(--text-success);" aria-hidden="true"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <p id="scan-title" style="font-size:14px;font-weight:500;margin:0 0 2px;color:var(--text-primary);">Ready</p>
+        <p id="scan-sub" style="font-size:12px;color:var(--text-secondary);margin:0;">Tap launch to patrol the field</p>
+      </div>
+      <button id="scan-btn" onclick="launchScan()" style="white-space:nowrap;">Launch</button>
+    </div>
 
-  <div id="history-list" style="display:flex;flex-direction:column;background:var(--surface-1);border-radius:12px;padding:0 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);"></div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+      <h3 style="font-size:15px;font-weight:500;margin:0;color:var(--text-primary);">Pest history</h3>
+      <span id="record-count" style="font-size:12px;color:var(--text-muted);">2 scans</span>
+    </div>
+
+    <div id="history-list" style="display:flex;flex-direction:column;"></div>
+  </div>
 </div>
 
 <script>
-var scanning = false;
-var scanTimer = null;
+var busy = false;
+var sessionCounter = 2;
+var plots = ['A-1','A-2','A-3','B-1','B-2'];
+var toastTimer = null;
 
-var records = [
-  {date:'May 12, 2025', time:'08:45 AM', status:'Treated', role:'success', area:'Area A', plot:'A-3'},
-  {date:'May 10, 2025', time:'04:15 PM', status:'Treated', role:'success', area:'Area B', plot:'B-1'},
-  {date:'May 8, 2025', time:'10:30 AM', status:'No activity', role:'accent', area:'Area B', plot:'B-2'},
-  {date:'May 5, 2025', time:'03:20 PM', status:'Treated', role:'success', area:'Area A', plot:'A-3'},
-  {date:'May 3, 2025', time:'11:05 AM', status:'Treated', role:'success', area:'Area A', plot:'A-3'},
-  {date:'Apr 30, 2025', time:'09:40 AM', status:'No activity', role:'accent', area:'Area B', plot:'B-1'},
-  {date:'Apr 28, 2025', time:'02:15 PM', status:'Treated', role:'success', area:'Area B', plot:'B-2'},
-  {date:'Apr 25, 2025', time:'10:00 AM', status:'No activity', role:'accent', area:'Area A', plot:'A-3'}
-];
-
-var outcomes = [
-  {status:'Treated', role:'success', detected:true},
-  {status:'Treated', role:'success', detected:true},
-  {status:'Treated', role:'success', detected:true},
-  {status:'No activity', role:'accent', detected:false}
-];
-
-var plots = [
-  {area:'Area A', plot:'A-1'},
-  {area:'Area A', plot:'A-2'},
-  {area:'Area A', plot:'A-3'},
-  {area:'Area B', plot:'B-1'},
-  {area:'Area B', plot:'B-2'}
-];
-
-function toggleScan(){
-  scanning = !scanning;
-  var wrap = document.getElementById('scan-dot-wrap');
-  var icon = document.getElementById('scan-icon');
-  var title = document.getElementById('scan-title');
-  var sub = document.getElementById('scan-sub');
-  var btn = document.getElementById('scan-btn');
-
-  if(scanning){
-    wrap.style.background = 'var(--bg-accent)';
-    icon.className = 'ti ti-player-stop-filled';
-    icon.style.color = 'var(--text-accent)';
-    icon.style.fontSize = '16px';
-    title.textContent = 'Scanning';
-    sub.textContent = 'Move around your plot to detect activity';
-    btn.textContent = 'Stop scan';
-
-    scanTimer = setTimeout(function(){
-      logScanResult();
-    }, 2200);
-  } else {
-    clearTimeout(scanTimer);
-    resetScanCard();
+var sessions = [
+  {
+    id: 2, start:'07:12 AM', end:'07:24 AM', date:'2026-07-01', expanded:false,
+    detections: [
+      {label:'Pest detected 1', ts:'2026-07-01 07:15 AM', area:'Area A', plot:'A-3', count:4, species:'Grasshoppers', threat:'Critical (Spraying Activated)', action:'0.5mL localized pesticide applied', expanded:false}
+    ]
+  },
+  {
+    id: 1, start:'06:40 AM', end:'06:51 AM', date:'2026-06-30', expanded:false,
+    detections: []
   }
+];
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function dateStamp(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function timeStamp(d){ return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); }
+
+function showToast(msg, sub){
+  var slot = document.getElementById('toast-slot');
+  document.getElementById('toast-title').textContent = msg;
+  document.getElementById('toast-sub').textContent = sub;
+  slot.style.maxHeight = '80px';
+  slot.style.opacity = '1';
+  slot.style.marginBottom = '1rem';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){
+    slot.style.maxHeight = '0';
+    slot.style.opacity = '0';
+    slot.style.marginBottom = '0';
+  }, 2200);
 }
 
-function resetScanCard(){
+function setScanState(bg, icon, spin, title, sub){
   var wrap = document.getElementById('scan-dot-wrap');
-  var icon = document.getElementById('scan-icon');
-  var title = document.getElementById('scan-title');
-  var sub = document.getElementById('scan-sub');
-  var btn = document.getElementById('scan-btn');
-
-  wrap.style.background = 'var(--bg-success)';
-  icon.className = 'ti ti-scan';
-  icon.style.color = 'var(--text-success)';
-  icon.style.fontSize = '20px';
-  title.textContent = 'Not scanning';
-  sub.textContent = 'Tap start to scan for rice hopper';
-  btn.textContent = 'Start scan';
+  var ic = document.getElementById('scan-icon');
+  wrap.style.background = 'var(--bg-' + bg + ')';
+  ic.className = 'ti ' + icon + (spin ? ' spin' : '');
+  ic.style.color = 'var(--text-' + bg + ')';
+  document.getElementById('scan-title').textContent = title;
+  document.getElementById('scan-sub').textContent = sub;
 }
 
-function logScanResult(){
-  scanning = false;
+function launchScan(){
+  if(busy) return;
+  busy = true;
+  var btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  btn.textContent = 'Working';
 
-  var outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
-  var spot = plots[Math.floor(Math.random() * plots.length)];
   var now = new Date();
-  var dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  var startTime = timeStamp(now);
+  var dateStr = dateStamp(now);
 
-  var newRecord = {date: dateStr, time: timeStr, status: outcome.status, role: outcome.role, area: spot.area, plot: spot.plot, isNew: true};
-  records.unshift(newRecord);
+  setScanState('accent', 'ti-refresh', true, 'Initializing', 'Warming up cameras and model');
 
-  var wrap = document.getElementById('scan-dot-wrap');
-  var icon = document.getElementById('scan-icon');
-  var title = document.getElementById('scan-title');
-  var sub = document.getElementById('scan-sub');
-  var btn = document.getElementById('scan-btn');
+  var detections = [];
+  var idx = 0;
 
-  wrap.style.background = 'var(--bg-' + outcome.role + ')';
-  icon.className = outcome.detected ? 'ti ti-check' : 'ti ti-scan';
-  icon.style.color = 'var(--text-' + outcome.role + ')';
-  icon.style.fontSize = '18px';
-  title.textContent = outcome.detected ? 'Pest treated' : 'Scan complete';
-  sub.textContent = outcome.detected ? 'Pesticide applied at plot ' + spot.plot : 'No activity at plot ' + spot.plot;
-  btn.textContent = 'Start scan';
+  function scanNextPlot(){
+    if(idx >= plots.length){ finishScan(); return; }
+    var plot = plots[idx];
+    var area = plot.charAt(0) === 'A' ? 'Area A' : 'Area B';
+    setScanState('accent', 'ti-scan', true, 'Detecting', 'Scanning plot ' + plot);
+    setTimeout(function(){
+      if(Math.random() < 0.35){
+        var count = Math.floor(Math.random()*5)+2;
+        var level = count >= 5 ? 'Critical' : 'High';
+        var dose = (count * 0.12).toFixed(1);
+        var ts = dateStr + ' ' + timeStamp(new Date());
+        detections.push({
+          label: 'Pest detected ' + (detections.length + 1),
+          ts: ts, area: area, plot: plot, count: count, species: 'Grasshoppers',
+          threat: level + ' (Spraying Activated)', action: dose + 'mL localized pesticide applied', expanded:false
+        });
+        showToast(area + ', plot ' + plot, count + ' grasshoppers \u00b7 ' + level + ' \u00b7 spraying activated');
+      }
+      idx++;
+      scanNextPlot();
+    }, 1000);
+  }
 
-  renderHistory();
+  function finishScan(){
+    var endTime = timeStamp(new Date());
+    sessionCounter++;
+    sessions.unshift({ id: sessionCounter, start: startTime, end: endTime, date: dateStr, expanded:false, detections: detections });
+    renderHistory();
+
+    if(detections.length){
+      setScanState('danger', 'ti-alert-triangle', false, 'Route complete', detections.length + ' pest detections logged');
+    } else {
+      setScanState('success', 'ti-check', false, 'Route complete', 'No pests found');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Launch';
+    busy = false;
+  }
+
+  scanNextPlot();
 }
+
+function toggleSession(i){ sessions[i].expanded = !sessions[i].expanded; renderHistory(); }
+function toggleDetection(si, di){ sessions[si].detections[di].expanded = !sessions[si].detections[di].expanded; renderHistory(); }
 
 function renderHistory(){
   var list = document.getElementById('history-list');
-  var count = document.getElementById('record-count');
-  count.textContent = records.length + ' records';
+  document.getElementById('record-count').textContent = sessions.length + ' scans';
   list.innerHTML = '';
 
-  records.forEach(function(r, i){
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;' + (i < records.length - 1 ? 'border-bottom:0.5px solid var(--border);' : '') + (r.isNew ? 'background:var(--bg-' + r.role + ');border-radius:var(--radius);padding:12px 10px;margin-bottom:2px;' : '');
+  sessions.forEach(function(s, si){
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'padding:10px 0;' + (si < sessions.length - 1 ? 'border-bottom:0.5px solid var(--border);' : '');
 
-    var textCol = document.createElement('div');
-    textCol.style.cssText = 'flex:1;min-width:0;';
-    textCol.innerHTML =
-      '<p style="font-size:14px;font-weight:500;margin:0 0 2px;color:var(--text-primary);">' + r.date + ' &middot; ' + r.time + (r.isNew ? ' <span style="font-size:11px;color:var(--text-' + r.role + ');font-weight:500;">&middot; just now</span>' : '') + '</p>' +
-      '<p style="font-size:13px;color:var(--text-secondary);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.area + ', plot ' + r.plot + '</p>';
+    var hasPests = s.detections.length > 0;
+    var badgeBg = hasPests ? 'var(--bg-danger)' : 'var(--bg-success)';
+    var badgeFg = hasPests ? 'var(--text-danger)' : 'var(--text-success)';
 
-    var badge = document.createElement('span');
-    badge.textContent = r.status;
-    badge.style.cssText = 'font-size:12px;font-weight:500;padding:3px 10px;border-radius:var(--radius);white-space:nowrap;flex-shrink:0;background:var(--bg-' + r.role + ');color:var(--text-' + r.role + ');';
+    var top = document.createElement('div');
+    top.style.cssText = 'display:flex;align-items:center;gap:10px;cursor:pointer;';
+    top.onclick = function(){ toggleSession(si); };
+    top.innerHTML =
+      '<i class="ti ti-chevron-down chev" style="font-size:14px;color:var(--text-muted);transform:rotate(' + (s.expanded ? '0deg' : '-90deg') + ');" aria-hidden="true"></i>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<p style="font-size:13px;font-weight:500;margin:0;color:var(--text-primary);">Pest scan ' + s.id + '</p>' +
+        '<p style="font-size:11px;color:var(--text-muted);margin:0;">' + s.date + ' \u00b7 ' + s.start + ' \u2013 ' + s.end + '</p>' +
+      '</div>' +
+      '<span style="font-size:11px;font-weight:500;padding:3px 9px;border-radius:var(--radius);white-space:nowrap;background:' + badgeBg + ';color:' + badgeFg + ';">' + (hasPests ? s.detections.length + ' detected' : 'No pests') + '</span>';
+    wrap.appendChild(top);
 
-    row.appendChild(textCol);
-    row.appendChild(badge);
-    list.appendChild(row);
+    if(s.expanded){
+      var sub = document.createElement('div');
+      sub.style.cssText = 'margin:8px 0 0 24px;';
+      if(!hasPests){
+        sub.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin:0;">No detections during this scan.</p>';
+      } else {
+        s.detections.forEach(function(d, di){
+          var dRow = document.createElement('div');
+          dRow.style.cssText = 'padding:6px 0;';
+          var dTop = document.createElement('div');
+          dTop.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;';
+          dTop.onclick = function(){ toggleDetection(si, di); };
+          dTop.innerHTML =
+            '<i class="ti ti-chevron-down chev" style="font-size:12px;color:var(--text-muted);transform:rotate(' + (d.expanded ? '0deg' : '-90deg') + ');" aria-hidden="true"></i>' +
+            '<span style="flex:1;font-size:12px;font-weight:500;color:var(--text-primary);">' + d.label + '</span>' +
+            '<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">' + d.ts.split(' ')[1] + ' ' + d.ts.split(' ')[2] + '</span>';
+          dRow.appendChild(dTop);
+
+          if(d.expanded){
+            var alertBox = document.createElement('div');
+            alertBox.style.cssText = 'margin:8px 0 0 20px;background:var(--bg-danger);border-radius:var(--radius);padding:10px 12px;';
+            var rows = [
+              ['Pest count', d.count + ' ' + d.species + ' detected'],
+              ['Threat level', d.threat],
+              ['Action taken', d.action],
+              ['Timestamp', d.ts]
+            ];
+            alertBox.innerHTML = '<p style="font-size:11px;font-weight:500;margin:0 0 6px;color:var(--text-danger);letter-spacing:0.02em;">ALERT DETAILS</p>' +
+              rows.map(function(r){
+                return '<div style="display:flex;justify-content:space-between;gap:12px;padding:2px 0;font-size:12px;">' +
+                  '<span style="color:var(--text-secondary);">' + r[0] + '</span>' +
+                  '<span style="color:var(--text-primary);font-weight:500;text-align:right;">' + r[1] + '</span>' +
+                  '</div>';
+              }).join('');
+            dRow.appendChild(alertBox);
+          }
+          sub.appendChild(dRow);
+        });
+      }
+      wrap.appendChild(sub);
+    }
+    list.appendChild(wrap);
   });
 }
-
 renderHistory();
 </script>
 
